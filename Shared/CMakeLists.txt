@@ -1,0 +1,5 @@
+﻿project(Shared)
+add_library(Shared INTERFACE)
+target_include_directories(Shared INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(Shared INTERFACE glm spdlog::spdlog nlohmann_json::nlohmann_json)
+target_compile_features(Shared INTERFACE cxx_std_23)
