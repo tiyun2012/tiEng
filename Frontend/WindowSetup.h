@@ -1,8 +1,8 @@
 #pragma once
 
-// Version: 2.0.0
+// Version: 2.1.0
 // Purpose: Unified window and ImGui setup for Geometry Engine
-// Features: Error handling, font loading, viewport support, configurable themes
+// Features: Docking (Fixed), Viewports, Themes, Error Handling
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -17,154 +17,8 @@
 #include <chrono>
 
 // Include your icon definitions
-#include "./UI/Core/IconsFontAwesome6.h"
-
-// ---------------- Compatibility shim for multiple Dear ImGui versions --------------
-// Provide minimal fallbacks for symbols that might be missing in some ImGui headers.
-// These fallbacks are safe (map to 0 or an existing enum) and keep the code compiling
-// when docking/viewports/colors/flags are not available in the linked/header version.
-
-#ifndef IMGUI_VERSION_NUM
-// If IMGUI_VERSION_NUM is not provided by the header, assume a conservative value.
-#define IMGUI_VERSION_NUM 18000
-#endif
-
-// Config flags
-#ifndef ImGuiConfigFlags_DockingEnable
-#define ImGuiConfigFlags_DockingEnable 0
-#endif
-#ifndef ImGuiConfigFlags_ViewportsEnable
-#define ImGuiConfigFlags_ViewportsEnable 0
-#endif
-#ifndef ImGuiConfigFlags_NavEnableKeyboard
-#define ImGuiConfigFlags_NavEnableKeyboard 0
-#endif
-#ifndef ImGuiConfigFlags_NavEnableGamepad
-#define ImGuiConfigFlags_NavEnableGamepad 0
-#endif
-
-// Docking node flags
-#ifndef ImGuiDockNodeFlags_PassthruCentralNode
-#define ImGuiDockNodeFlags_PassthruCentralNode 0
-#endif
-
-// Window flags used in BeginDockspace
-#ifndef ImGuiWindowFlags_NoDocking
-#define ImGuiWindowFlags_NoDocking 0
-#endif
-#ifndef ImGuiWindowFlags_NoTitleBar
-#define ImGuiWindowFlags_NoTitleBar 0
-#endif
-#ifndef ImGuiWindowFlags_NoCollapse
-#define ImGuiWindowFlags_NoCollapse 0
-#endif
-#ifndef ImGuiWindowFlags_NoResize
-#define ImGuiWindowFlags_NoResize 0
-#endif
-#ifndef ImGuiWindowFlags_NoMove
-#define ImGuiWindowFlags_NoMove 0
-#endif
-#ifndef ImGuiWindowFlags_NoBringToFrontOnFocus
-#define ImGuiWindowFlags_NoBringToFrontOnFocus 0
-#endif
-#ifndef ImGuiWindowFlags_NoNavFocus
-#define ImGuiWindowFlags_NoNavFocus 0
-#endif
-#ifndef ImGuiWindowFlags_NoBackground
-#define ImGuiWindowFlags_NoBackground 0
-#endif
-
-// Color enum fallbacks — map to an existing/neutral color if missing
-#ifndef ImGuiCol_Tab
-#ifdef ImGuiCol_WindowBg
-#define ImGuiCol_Tab ImGuiCol_WindowBg
-#else
-#define ImGuiCol_Tab 0
-#endif
-#endif
-
-#ifndef ImGuiCol_TabHovered
-#ifdef ImGuiCol_WindowBg
-#define ImGuiCol_TabHovered ImGuiCol_WindowBg
-#else
-#define ImGuiCol_TabHovered 0
-#endif
-#endif
-
-#ifndef ImGuiCol_TabActive
-#ifdef ImGuiCol_WindowBg
-#define ImGuiCol_TabActive ImGuiCol_WindowBg
-#else
-#define ImGuiCol_TabActive 0
-#endif
-#endif
-
-#ifndef ImGuiCol_TabUnfocused
-#ifdef ImGuiCol_WindowBg
-#define ImGuiCol_TabUnfocused ImGuiCol_WindowBg
-#else
-#define ImGuiCol_TabUnfocused 0
-#endif
-#endif
-
-#ifndef ImGuiCol_TabUnfocusedActive
-#ifdef ImGuiCol_WindowBg
-#define ImGuiCol_TabUnfocusedActive ImGuiCol_WindowBg
-#else
-#define ImGuiCol_TabUnfocusedActive 0
-#endif
-#endif
-
-#ifndef ImGuiCol_DockingPreview
-#ifdef ImGuiCol_WindowBg
-#define ImGuiCol_DockingPreview ImGuiCol_WindowBg
-#else
-#define ImGuiCol_DockingPreview 0
-#endif
-#endif
-
-#ifndef ImGuiCol_DockingEmptyBg
-#ifdef ImGuiCol_WindowBg
-#define ImGuiCol_DockingEmptyBg ImGuiCol_WindowBg
-#else
-#define ImGuiCol_DockingEmptyBg 0
-#endif
-#endif
-
-#ifndef ImGuiCol_NavHighlight
-#ifdef ImGuiCol_WindowBg
-#define ImGuiCol_NavHighlight ImGuiCol_WindowBg
-#else
-#define ImGuiCol_NavHighlight 0
-#endif
-#endif
-
-// Ensure older ImGui builds that don't expose SetNextWindowViewport/ DockSpace / platform window helpers
-// won't produce IntelliSense/compile errors. We don't implement behavior here — we just avoid missing-symbol errors.
-#if IMGUI_VERSION_NUM < 17800
-// For very old ImGui versions we won't attempt to call docking/viewports helpers — those calls are guarded
-// in the code, so defining these as empty macros/safe no-ops is sufficient for compilation.
-// (legacy macro-based no-ops removed in favor of ImGui namespace inline stubs below)
-#endif
-
-namespace WindowSetup {
-namespace ImGuiCompat {
-    inline void UpdatePlatformWindows() {
-        // forward to ImGui if available
-        ImGui::UpdatePlatformWindows();
-    }
-    inline void RenderPlatformWindowsDefault() {
-        ImGui::RenderPlatformWindowsDefault();
-    }
-    inline void SetNextWindowViewport(ImGuiID id) {
-        ImGui::SetNextWindowViewport(id);
-    }
-    inline void DockSpace(ImGuiID id, ImVec2 size = ImVec2(0,0), int flags = 0) {
-        // cast flags to ImGuiDockNodeFlags to match common ImGui signature
-        ImGui::DockSpace(id, size, static_cast<ImGuiDockNodeFlags>(flags));
-    }
-} // namespace ImGuiCompat
-} // namespace WindowSetup
+// Ensure this path matches your file structure relative to WindowSetup.h
+#include "UI/Core/IconsFontAwesome6.h"
 
 namespace WindowSetup {
 
@@ -285,7 +139,7 @@ namespace WindowSetup {
         ~ScopedTimer() {
             auto end = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - m_start);
-            std::cout << "[TIMER] " << m_name << ": " << duration.count() << "μs" << std::endl;
+            std::cout << "[TIMER] " << m_name << ": " << duration.count() << "us" << std::endl;
         }
         
     private:
@@ -322,13 +176,13 @@ namespace WindowSetup {
         
         // Window close callback
         static void window_close_callback(GLFWwindow* window) {
-            (void)window; // Add this line
+            (void)window; // Suppress unused parameter warning
             s_should_close = true;
         }
                 
         // Framebuffer resize callback
         static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-            (void)window; // mark parameter used to silence C4100
+            (void)window; // Suppress unused parameter warning
             if (width > 0 && height > 0) {
                 s_config.width = width;
                 s_config.height = height;
@@ -424,11 +278,7 @@ namespace WindowSetup {
             }
         }
         
-        // Some ImGui headers expose an explicit Build() on ImFontAtlas; others build automatically.
-        // To avoid "no member Build" diagnostics for certain ImGui versions, skip calling Build() explicitly.
-        // If your ImGui version requires Build(), re-enable the call guarded by the correct IMGUI_VERSION_NUM.
-        // io.Fonts->Build(); // removed for compatibility
-        
+        // io.Fonts->Build(); // Handled by ImGui_ImplOpenGL3_NewFrame
         return success;
     }
 
@@ -458,166 +308,36 @@ namespace WindowSetup {
                 style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.25f, 0.30f, 0.35f, 1.00f);
                 style.Colors[ImGuiCol_TitleBg] = ImVec4(0.08f, 0.10f, 0.14f, 1.00f);
                 style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.10f, 0.12f, 0.16f, 1.00f);
-                style.Colors[ImGuiCol_CheckMark] = ImVec4(0.00f, 0.60f, 1.00f, 1.00f);
-                style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.00f, 0.60f, 1.00f, 1.00f);
-                style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.00f, 0.70f, 1.00f, 1.00f);
-                style.Colors[ImGuiCol_Button] = ImVec4(0.00f, 0.60f, 1.00f, 0.40f);
-                style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.00f, 0.60f, 1.00f, 0.60f);
-                style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.00f, 0.70f, 1.00f, 0.80f);
-                style.Colors[ImGuiCol_Header] = ImVec4(0.00f, 0.60f, 1.00f, 0.30f);
-                style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.00f, 0.60f, 1.00f, 0.50f);
-                style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.00f, 0.70f, 1.00f, 0.70f);
-                style.Colors[ImGuiCol_Separator] = ImVec4(0.20f, 0.25f, 0.30f, 1.00f);
-                style.Colors[ImGuiCol_SeparatorHovered] = ImVec4(0.30f, 0.35f, 0.40f, 1.00f);
-                style.Colors[ImGuiCol_SeparatorActive] = ImVec4(0.40f, 0.45f, 0.50f, 1.00f);
-                style.Colors[ImGuiCol_Tab] = ImVec4(0.10f, 0.12f, 0.16f, 0.86f);
-                style.Colors[ImGuiCol_TabHovered] = ImVec4(0.15f, 0.18f, 0.22f, 0.80f);
-                style.Colors[ImGuiCol_TabActive] = ImVec4(0.20f, 0.25f, 0.30f, 1.00f);
-                style.Colors[ImGuiCol_TabUnfocused] = ImVec4(0.08f, 0.10f, 0.14f, 0.97f);
-                style.Colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.12f, 0.15f, 0.20f, 1.00f);
-                style.Colors[ImGuiCol_DockingPreview] = ImVec4(0.00f, 0.60f, 1.00f, 0.70f);
                 break;
                 
             case ThemePreset::Dracula: {
-                // Dracula Theme (https://draculatheme.com/)
+                // Simplified Dracula-inspired setup
+                ImGui::StyleColorsDark();
                 auto& colors = style.Colors;
-                colors[ImGuiCol_Text] = ImVec4(0.93f, 0.94f, 0.95f, 1.00f);
-                colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
                 colors[ImGuiCol_WindowBg] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
-                colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
-                colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-                colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
-                colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-                colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
-                colors[ImGuiCol_FrameBgHovered] = ImVec4(0.28f, 0.56f, 0.90f, 0.40f);
-                colors[ImGuiCol_FrameBgActive] = ImVec4(0.16f, 0.29f, 0.48f, 1.00f);
-                colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.12f, 0.14f, 0.65f);
                 colors[ImGuiCol_TitleBgActive] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
-                colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
-                colors[ImGuiCol_MenuBarBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
-                colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.39f);
-                colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
-                colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.18f, 0.22f, 0.25f, 1.00f);
-                colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.09f, 0.21f, 0.31f, 1.00f);
                 colors[ImGuiCol_CheckMark] = ImVec4(0.58f, 0.41f, 0.93f, 1.00f);
-                colors[ImGuiCol_SliderGrab] = ImVec4(0.28f, 0.56f, 0.90f, 1.00f);
-                colors[ImGuiCol_SliderGrabActive] = ImVec4(0.37f, 0.61f, 0.92f, 1.00f);
                 colors[ImGuiCol_Button] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
                 colors[ImGuiCol_ButtonHovered] = ImVec4(0.28f, 0.56f, 0.90f, 1.00f);
                 colors[ImGuiCol_ButtonActive] = ImVec4(0.06f, 0.53f, 0.98f, 1.00f);
-                colors[ImGuiCol_Header] = ImVec4(0.20f, 0.25f, 0.29f, 0.55f);
-                colors[ImGuiCol_HeaderHovered] = ImVec4(0.28f, 0.56f, 0.90f, 0.80f);
-                colors[ImGuiCol_HeaderActive] = ImVec4(0.28f, 0.56f, 0.90f, 1.00f);
-                colors[ImGuiCol_Separator] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
-                colors[ImGuiCol_SeparatorHovered] = ImVec4(0.10f, 0.40f, 0.75f, 0.78f);
-                colors[ImGuiCol_SeparatorActive] = ImVec4(0.10f, 0.40f, 0.75f, 1.00f);
-                colors[ImGuiCol_ResizeGrip] = ImVec4(0.28f, 0.56f, 0.90f, 0.25f);
-                colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.28f, 0.56f, 0.90f, 0.67f);
-                colors[ImGuiCol_ResizeGripActive] = ImVec4(0.06f, 0.05f, 0.07f, 1.00f);
-                colors[ImGuiCol_Tab] = ImVec4(0.10f, 0.13f, 0.16f, 0.86f);
-                colors[ImGuiCol_TabHovered] = ImVec4(0.28f, 0.56f, 0.90f, 0.80f);
-                colors[ImGuiCol_TabActive] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
-                colors[ImGuiCol_TabUnfocused] = ImVec4(0.10f, 0.13f, 0.16f, 0.97f);
-                colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.13f, 0.16f, 0.20f, 1.00f);
-                colors[ImGuiCol_DockingPreview] = ImVec4(0.28f, 0.56f, 0.90f, 0.70f);
-                colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.13f, 0.13f, 0.13f, 1.00f);
-                colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
-                colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
-                colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
-                colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
-                colors[ImGuiCol_TextSelectedBg] = ImVec4(0.28f, 0.56f, 0.90f, 0.35f);
-                colors[ImGuiCol_DragDropTarget] = ImVec4(0.58f, 0.41f, 0.93f, 1.00f);
-                colors[ImGuiCol_NavHighlight] = ImVec4(0.28f, 0.56f, 0.90f, 1.00f);
-                colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
-                colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
-                colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
                 break;
             }
                 
             case ThemePreset::MaterialDark: {
-                // Material Dark Theme
                 ImGui::StyleColorsDark();
-                style.FrameRounding = 4.0f;
                 style.WindowRounding = 8.0f;
-                style.PopupRounding = 4.0f;
-                style.ScrollbarRounding = 9.0f;
-                style.GrabRounding = 3.0f;
-                style.TabRounding = 4.0f;
+                style.FrameRounding = 4.0f;
                 style.WindowPadding = ImVec2(8, 8);
-                style.FramePadding = ImVec2(6, 4);
-                style.ItemSpacing = ImVec2(6, 4);
-                style.ItemInnerSpacing = ImVec2(4, 4);
-                style.TouchExtraPadding = ImVec2(0, 0);
-                style.IndentSpacing = 21.0f;
-                style.ScrollbarSize = 16.0f;
-                style.GrabMinSize = 10.0f;
-                style.WindowBorderSize = 1.0f;
-                style.ChildBorderSize = 1.0f;
-                style.PopupBorderSize = 1.0f;
-                style.FrameBorderSize = 0.0f;
-                style.TabBorderSize = 1.0f;
-                style.WindowTitleAlign = ImVec2(0.0f, 0.5f);
-                style.WindowMenuButtonPosition = ImGuiDir_Left;
-                style.ColorButtonPosition = ImGuiDir_Left;
-                style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
-                style.SelectableTextAlign = ImVec2(0.0f, 0.0f);
-                style.DisplaySafeAreaPadding = ImVec2(3.0f, 3.0f);
                 break;
             }
                 
             case ThemePreset::Cherry: {
-                // Cherry Theme (pink/purple accent)
                 ImGui::StyleColorsDark();
                 style.Colors[ImGuiCol_Text] = ImVec4(1.00f, 0.96f, 0.98f, 1.00f);
-                style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
                 style.Colors[ImGuiCol_WindowBg] = ImVec4(0.06f, 0.05f, 0.07f, 0.94f);
-                style.Colors[ImGuiCol_ChildBg] = ImVec4(0.10f, 0.09f, 0.12f, 0.00f);
-                style.Colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-                style.Colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
-                style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-                style.Colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.21f, 0.22f, 0.54f);
-                style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.40f, 0.40f, 0.40f, 0.40f);
-                style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.18f, 0.18f, 0.18f, 0.67f);
-                style.Colors[ImGuiCol_TitleBg] = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
-                style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.29f, 0.29f, 0.29f, 1.00f);
-                style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
-                style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-                style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
-                style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
-                style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
-                style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
-                style.Colors[ImGuiCol_CheckMark] = ImVec4(0.94f, 0.26f, 0.86f, 1.00f);
-                style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.94f, 0.26f, 0.86f, 1.00f);
-                style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.85f, 0.23f, 0.78f, 1.00f);
                 style.Colors[ImGuiCol_Button] = ImVec4(0.44f, 0.16f, 0.42f, 0.40f);
                 style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.94f, 0.26f, 0.86f, 1.00f);
-                style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.85f, 0.23f, 0.78f, 1.00f);
-                style.Colors[ImGuiCol_Header] = ImVec4(0.44f, 0.16f, 0.42f, 0.31f);
-                style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.44f, 0.16f, 0.42f, 0.80f);
-                style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.44f, 0.16f, 0.42f, 1.00f);
-                style.Colors[ImGuiCol_Separator] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
-                style.Colors[ImGuiCol_SeparatorHovered] = ImVec4(0.94f, 0.26f, 0.86f, 0.78f);
-                style.Colors[ImGuiCol_SeparatorActive] = ImVec4(0.94f, 0.26f, 0.86f, 1.00f);
-                style.Colors[ImGuiCol_ResizeGrip] = ImVec4(0.44f, 0.16f, 0.42f, 0.25f);
-                style.Colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.44f, 0.16f, 0.42f, 0.67f);
-                style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.85f, 0.23f, 0.78f, 0.95f);
-                style.Colors[ImGuiCol_Tab] = ImVec4(0.25f, 0.25f, 0.25f, 0.86f);
-                style.Colors[ImGuiCol_TabHovered] = ImVec4(0.44f, 0.16f, 0.42f, 0.80f);
-                style.Colors[ImGuiCol_TabActive] = ImVec4(0.33f, 0.14f, 0.32f, 1.00f);
-                style.Colors[ImGuiCol_TabUnfocused] = ImVec4(0.07f, 0.10f, 0.15f, 0.97f);
-                style.Colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.14f, 0.26f, 0.42f, 1.00f);
-                style.Colors[ImGuiCol_DockingPreview] = ImVec4(0.44f, 0.16f, 0.42f, 0.70f);
-                style.Colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
-                style.Colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
-                style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
-                style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
-                style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
-                style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.44f, 0.16f, 0.42f, 0.35f);
-                style.Colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
-                style.Colors[ImGuiCol_NavHighlight] = ImVec4(0.44f, 0.16f, 0.42f, 1.00f);
-                style.Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
-                style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
-                style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+                style.Colors[ImGuiCol_CheckMark] = ImVec4(0.94f, 0.26f, 0.86f, 1.00f);
                 break;
             }
         }
@@ -840,11 +560,11 @@ namespace WindowSetup {
         // Render ImGui draw data
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         
-        // Handle multi-viewports (use compat forwarders to avoid overload ambiguity)
+        // Handle multi-viewports (Updated for Docking branch)
         if (Internal::s_config.viewports_enabled) {
             GLFWwindow* backup_current_context = glfwGetCurrentContext();
-            WindowSetup::ImGuiCompat::UpdatePlatformWindows();
-            WindowSetup::ImGuiCompat::RenderPlatformWindowsDefault();
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
             glfwMakeContextCurrent(backup_current_context);
         }
         
@@ -971,9 +691,11 @@ namespace WindowSetup {
         if (!Internal::s_config.docking_enabled) return;
         
         ImGuiViewport* viewport = ImGui::GetMainViewport();
+        
+        // UPDATED: Using correct ImGui Docking API
         ImGui::SetNextWindowPos(viewport->WorkPos);
         ImGui::SetNextWindowSize(viewport->WorkSize);
-        WindowSetup::ImGuiCompat::SetNextWindowViewport(viewport->ID);
+        ImGui::SetNextWindowViewport(viewport->ID);
         
         ImGuiWindowFlags window_flags = 
             ImGuiWindowFlags_NoDocking |
@@ -993,7 +715,7 @@ namespace WindowSetup {
         ImGui::PopStyleVar(3);
         
         ImGuiID dockspace_id = ImGui::GetID(name);
-        WindowSetup::ImGuiCompat::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), 
+        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), 
                         fullscreen ? ImGuiDockNodeFlags_PassthruCentralNode : 0);
     }
     
@@ -1027,89 +749,3 @@ namespace WindowSetup {
         WindowSetup::Render(); \
     } \
     WindowSetup::Shutdown();
-
-// ============================================================================
-// EXAMPLE USAGE
-// ============================================================================
-/*
-// SandboxMain.cpp - Minimal example
-#include "WindowSetup.h"
-#include "UILayouts.h"
-
-int main() {
-    // Quick initialization
-    WINDOW_SETUP_QUICK_INIT("UI Sandbox");
-    
-    // Custom theme
-    WindowSetup::ApplyTheme(WindowSetup::ThemePreset::Dracula);
-    
-    // Main loop
-    WINDOW_SETUP_MAIN_LOOP
-        // Your UI code here
-        UILab::Render();
-    WINDOW_SETUP_END_LOOP
-    
-    return 0;
-}
-*/
-
-/*
-// EditorMain.cpp - Full example with custom configuration
-#include "WindowSetup.h"
-#include "EditorUI.h"
-
-int main() {
-    WindowSetup::WindowConfig config;
-    config.title = "Geometry Engine Editor";
-    config.width = 1920;
-    config.height = 1080;
-    config.vsync = WindowSetup::VSyncMode::Adaptive;
-    config.samples = 8; // 8x MSAA
-    config.fonts.size = 18.0f;
-    config.fonts.regular_path = "Assets/Fonts/Inter-Regular.ttf";
-    config.fonts.bold_path = "Assets/Fonts/Inter-Bold.ttf";
-    config.fonts.mono_path = "Assets/Fonts/JetBrainsMono-Regular.ttf";
-    config.fonts.load_font_awesome = true;
-    config.enable_debug_output = true;
-    
-    config.on_post_init = [](GLFWwindow* window) {
-        WindowSetup::CenterWindow();
-        WindowSetup::ApplyTheme(WindowSetup::ThemePreset::Corporate);
-        std::cout << "[INFO] Editor initialized successfully" << std::endl;
-    };
-    
-    GLFWwindow* window = WindowSetup::Initialize(config);
-    if (!window) return 1;
-    
-    // Initialize engine backend here
-    Backend::Init();
-    
-    while (!WindowSetup::ShouldClose()) {
-        WindowSetup::BeginFrame();
-        WindowSetup::BeginDockspace();
-        
-        // Render editor UI
-        EditorUI::RenderMainMenuBar();
-        EditorUI::RenderViewport();
-        EditorUI::RenderSceneHierarchy();
-        EditorUI::RenderInspector();
-        EditorUI::RenderAssetBrowser();
-        
-        // Performance overlay (optional)
-        if (ImGui::Begin("Performance", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs)) {
-            auto metrics = WindowSetup::GetMetrics();
-            ImGui::Text("FPS: %.1f (%.2f ms)", metrics.fps, metrics.frame_time_ms);
-            ImGui::Text("Draw Calls: %zu", metrics.draw_calls);
-            ImGui::Text("Vertices: %zu | Indices: %zu", metrics.vertices, metrics.indices);
-            ImGui::End();
-        }
-        
-        WindowSetup::EndDockspace();
-        WindowSetup::EndFrame();
-        WindowSetup::Render();
-    }
-    
-    WindowSetup::Shutdown();
-    return 0;
-}
-*/
